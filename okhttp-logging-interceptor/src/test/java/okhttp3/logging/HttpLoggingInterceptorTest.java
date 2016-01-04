@@ -160,6 +160,26 @@ public final class HttpLoggingInterceptorTest {
         .assertNoMoreLogs();
   }
 
+  @Test public void basicResponseBodyChunked() throws IOException {
+    setLevel(Level.BASIC);
+
+    server.enqueue(new MockResponse()
+            .setChunkedBody("Hello!", 2)
+            .setHeader("Content-Type", PLAIN));
+    Response response = client.newCall(request().build()).execute();
+    response.body().close();
+
+    applicationLogs
+            .assertLogEqual("--> GET " + url + " HTTP/1.1")
+            .assertLogMatch("<-- 200 OK " + url + " \\(\\d+ms, 6-byte body\\)")
+            .assertNoMoreLogs();
+
+    networkLogs
+            .assertLogEqual("--> GET " + url + " HTTP/1.1")
+            .assertLogMatch("<-- 200 OK " + url + " \\(\\d+ms, 6-byte body\\)")
+            .assertNoMoreLogs();
+  }
+
   @Test public void headersGet() throws IOException {
     setLevel(Level.HEADERS);
 
